@@ -22,25 +22,28 @@
 
 module pixelCounter(
     input clk,
-    input CMR_PIX,
-    input PIX_MAX,
-    input LIN_MAX,
+    input rst,
+    input [0:3] CMR_PIX,
+    input [0:9] PIX_MAX,
+    input [0:9] LIN_MAX,
     output reg [0:9] PIX_CNT,
     output reg [0:9] LIN_CNT
     );
     
-    reg TMR;
     
-    always @(clk) begin // 24Mhz because also inverts
-        TMR = TMR + 1;
-        if(TMR == CMR_PIX) begin
-        PIX_CNT = PIX_CNT + 1;
-        TMR = 0;
+    reg [0:9] TMR = 10'b0;
+    reg [0:9] TEMP_TMR = 10'b0;
+    reg flip = 0;
+    reg [0:2] ADD_STATE = 0;
+    
+    always @(posedge clk) begin // 100Mhz because also inverts
+        if(rst) begin
+            TMR = 0;
+            PIX_CNT = 0;
+            LIN_CNT = 0;
+        end else begin
+            PIX_CNT = PIX_CNT + (TMR == CMR_PIX)*(PIX_CNT != PIX_MAX) - PIX_CNT*(PIX_CNT == PIX_MAX);
+            TMR = TMR + (TMR!=CMR_PIX) - TMR*(TMR == CMR_PIX);
         end
-        if(PIX_CNT > PIX_MAX) begin
-            PIX_CNT  = 0;
-            LIN_CNT = LIN_CNT + 1;
-        end
-        if(LIN_CNT>LIN_MAX) LIN_CNT = 0;
     end
 endmodule
